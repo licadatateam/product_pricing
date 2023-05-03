@@ -486,28 +486,6 @@ def clean_load_rating(load):
     return 0
 
 def combine_sku(row):
-    df = df = pd.DataFrame(columns = ['make', 
-                                      'section_width', 
-                                      'aspect_ratio', 
-                                      'rim_size', 
-                                      'pattern', 
-                                      'load_rating', 
-                                      'speed_rating'])
-    df = df.append(pd.Series({'make': 'ARIVO', 
-                              'section_width': '195', 
-                              'aspect_ratio': 'R',
-                              'rim_size': 'R15',
-                              'pattern': 'TRANSITO ARZ 6-X',
-                              'load_rating': '106/104',
-                              'speed_rating': 'Q'}), ignore_index = True)
-    
-    '''
-    DOCTESTS:
-            
-    >>> combine_sku(df.loc[0])
-    'ARIVO 195/R15 TRANSITO ARZ 6-X 106/104Q'
-    
-    '''
     specs_cols = ['section_width', 'aspect_ratio', 'rim_size']
     specs = combine_specs(row[specs_cols[0]], 
                           row[specs_cols[1]], 
