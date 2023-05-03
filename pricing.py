@@ -182,7 +182,7 @@ def import_makes():
     '''
     Import list of makes
     '''
-    with open("gulong_makes.txt") as makes_file:
+    with open(r".\gulong_makes.txt") as makes_file:
         makes = makes_file.readlines()
         
     makes = [re.sub('\n', '', m).strip() for m in makes]
@@ -485,6 +485,42 @@ def clean_load_rating(load):
     
     return 0
 
+def combine_sku(row):
+    df = df = pd.DataFrame(columns = ['make', 
+                                      'section_width', 
+                                      'aspect_ratio', 
+                                      'rim_size', 
+                                      'pattern', 
+                                      'load_rating', 
+                                      'speed_rating'])
+    df = df.append(pd.Series({'make': 'ARIVO', 
+                              'section_width': '195', 
+                              'aspect_ratio': 'R',
+                              'rim_size': 'R15',
+                              'pattern': 'TRANSITO ARZ 6-X',
+                              'load_rating': '106/104',
+                              'speed_rating': 'Q'}), ignore_index = True)
+    
+    '''
+    DOCTESTS:
+            
+    >>> combine_sku(df.loc[0])
+    'ARIVO 195/R15 TRANSITO ARZ 6-X 106/104Q'
+    
+    '''
+    specs_cols = ['section_width', 'aspect_ratio', 'rim_size']
+    specs = combine_specs(row[specs_cols[0]], 
+                          row[specs_cols[1]], 
+                          row[specs_cols[2]],
+                          mode = 'SKU')
+    
+    SKU = ' '.join([row['make'], specs, row['pattern']])
+    if pd.notna(row['load_rating']) and pd.notna(row['speed_rating']):
+        SKU  = SKU + ' ' +  row['load_rating'] + row['speed_rating']
+    else:
+        pass
+    return SKU
+    
 @st.cache_data
 def acquire_data():
     # http://app.redash.licagroup.ph/queries/131
@@ -501,7 +537,8 @@ def acquire_data():
     df_data.loc[:, 'aspect_ratio'] = df_data.apply(lambda x: clean_aspect_ratio(x['aspect_ratio'], model = x['model']), axis=1)
     df_data.loc[:, 'rim_size'] = df_data.apply(lambda x: clean_diameter(x['rim_size']), axis=1)
     df_data.loc[:, 'speed_rating'] = df_data.apply(lambda x: clean_speed_rating(x['speed_rating']), axis=1)
-    
+    df_data.loc[:, 'model_'] = df_data.loc[:, 'model']
+    df_data.loc[:, 'model'] = df_data.apply(lambda x: combine_sku(x), axis=1)
     
     df_supplier = df_data[['model','supplier','supplier_price','supplier_updated']].copy().sort_values(by='supplier_updated',ascending=False)
     df_supplier = df_supplier.drop_duplicates(subset=['model','supplier'],keep='first')
