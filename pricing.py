@@ -182,7 +182,7 @@ def import_makes():
     '''
     Import list of makes
     '''
-    with open(r".\gulong_makes.txt") as makes_file:
+    with open("gulong_makes.txt") as makes_file:
         makes = makes_file.readlines()
         
     makes = [re.sub('\n', '', m).strip() for m in makes]
