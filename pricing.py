@@ -1,7 +1,8 @@
 
 """
 Created on Mon Aug  8 16:46:26 2022
-@author: Arvin Jay
+@author1: Arvin Jay
+@author2: Carlo
 """
 
 import pandas as pd
@@ -398,6 +399,7 @@ def combine_specs(w, ar, d, mode = 'SKU'):
     '''
     if mode == 'SKU':
         if ar != 'R':
+            d = d if 'R' in d else 'R' + d 
             if '.' in ar:
                 return w + 'X' + ar + '/' + d
             else:
