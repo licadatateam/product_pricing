@@ -398,8 +398,8 @@ def combine_specs(w, ar, d, mode = 'SKU'):
     
     '''
     if mode == 'SKU':
+        d = d if 'R' in d else 'R' + d 
         if ar != 'R':
-            d = d if 'R' in d else 'R' + d 
             if '.' in ar:
                 return w + 'X' + ar + '/' + d
             else:
