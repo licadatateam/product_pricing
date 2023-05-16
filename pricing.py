@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 import math, re
 import gspread, datetime
-import doctest
+# import doctest
 
 from decimal import Decimal
 from fuzzywuzzy import fuzz, process
