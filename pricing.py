@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import math, re
 import gspread, datetime
+import os, sys
 
 from decimal import Decimal
 from fuzzywuzzy import fuzz, process
@@ -29,6 +30,9 @@ scopes=[
 ],)
 
 creds = st.secrets['lica_service_account']
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+output_path = os.path.abspath(os.path.dirname(__file__))
+os.chdir(output_path) # current working directory
 
 @st.cache_data
 def implement_sale(df, sale_tag, promo, srp):
