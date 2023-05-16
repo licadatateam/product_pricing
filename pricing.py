@@ -502,13 +502,6 @@ def combine_sku(row):
                               'load_rating': '106/104',
                               'speed_rating': 'Q'}), ignore_index = True)
     
-    '''
-    DOCTESTS:
-            
-    >>> combine_sku(df.loc[0])
-    'ARIVO 195/R15 TRANSITO ARZ 6-X 106/104Q'
-    
-    '''
     specs_cols = ['section_width', 'aspect_ratio', 'rim_size']
     specs = combine_specs(row[specs_cols[0]], 
                           row[specs_cols[1]], 
