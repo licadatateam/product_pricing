@@ -311,7 +311,7 @@ def clean_diameter(d):
     '''
     if pd.notna(d):
         d = str(d).strip().upper()
-        num_suffix = re.search('[0-9]+.?[0-9]+[A-Z]*', d)
+        num_suffix = re.search('[0-9]+.?[0-9]*[A-Z]*', d)
         if num_suffix is not None:
             num_str = ''.join(re.findall('([0-9]|\.)', num_suffix[0]))
             num = str(remove_trailing_zero(Decimal(num_str)))
@@ -518,7 +518,11 @@ def combine_sku(row):
                           row[specs_cols[2]],
                           mode = 'SKU')
     
-    SKU = ' '.join([row['make'], specs, row['pattern']])
+    if pd.notna(row['pattern']):
+        SKU = ' '.join([row['make'], specs, row['pattern']])
+    else:
+        SKU = ' '.join([row['make'], specs])
+    
     if pd.notna(row['load_rating']) and pd.notna(row['speed_rating']):
         SKU  = SKU + ' ' +  row['load_rating'] + row['speed_rating']
     else:
