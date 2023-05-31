@@ -1,18 +1,11 @@
 streamlit-aggrid
-lifetimes
 openpyxl
-prophet
-pytrends
 gsheetsdb
 google-auth
 XlsxWriter
 gspread
 networkx
-wordcloud
 parsel
-xgboost
-adjustText
-nltk
 datetime
 streamlit_pandas_profiling
 july
@@ -20,3 +13,6 @@ matplotlib
 selenium==4.2.0
 fuzzywuzzy
 gspread
+pandas
+pytz
+decimal
