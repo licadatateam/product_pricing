@@ -230,7 +230,7 @@ def acquire_data():
     df_data.loc[:, 'model_'] = df_data.loc[:, 'model']
     #df_data.loc[:, 'model'] = df_data.apply(lambda x: combine_sku(x), axis=1)
     df_data.loc[:, 'model'] = df_data.apply(lambda x: config_gulong.combine_sku(x['make'],
-                                                                                x['section_wdith'],
+                                                                                x['section_width'],
                                                                                 x['aspect_ratio'],
                                                                                 x['rim_size'],
                                                                                 x['pattern'],
