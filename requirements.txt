@@ -13,6 +13,4 @@ matplotlib
 selenium==4.2.0
 fuzzywuzzy
 gspread
-pandas
 pytz
-decimal
