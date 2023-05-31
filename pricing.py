@@ -9,6 +9,7 @@ import numpy as np
 import math, re
 import gspread, datetime
 import os, sys
+import config_gulong
 
 from decimal import Decimal
 from fuzzywuzzy import fuzz, process
@@ -181,353 +182,34 @@ def adjust_wrt_gogulong(df_comp,GP_15=15,GP_20=5,GP_20_=1, b2b=25,affiliate=27,m
   df_comp_.loc[:,'marketplace'] = df_comp_.loc[:,'supplier_max_price'].apply(lambda x:  consider_GP(x,mp))
   return df_comp_
 
-def import_makes():
-    '''
-    Import list of makes
-    '''
-    with open("gulong_makes.txt") as makes_file:
-        makes = makes_file.readlines()
-        
-    makes = [re.sub('\n', '', m).strip() for m in makes]
-    return makes
 
-makes_list = import_makes()
+makes_list = config_gulong.import_makes()
 
-def clean_make(x, makes, model = None):
-    '''
-    Helper function to cleanup gulong makes
-    
-    Parameters:
-        - x: string; value of gulong make, can be NaN
-        - makes: list; reference list of gulong makes from gulong_makes.txt
-    
-    Output:
-        cleaned string value of gulong make
-    '''
-    if pd.notna(x):
-        # baseline string correction if not NaN
-        x = x.strip().upper()
-        # check if partial match exists
-        if any((match := m) for m in makes if fuzz.partial_ratio(m, x) >= 95):
-            return match
-        # if model is provided, check model if make is included
-        elif model is not None and any((match := m) for m in makes if fuzz.partial_ratio(m, model.upper().strip()) >= 95):
-            return match
-        # check for best match given threshold
-        elif process.extractOne(x, makes)[1] >= 75:
-            return process.extractOne(x, makes)[0]
-        else:
-            return x
-    else:
-        # if input is NaN
-        return np.NaN
+# def combine_sku(row):
 
-def remove_trailing_zero(num):
-    '''
-    Removes unnecessary zeros from decimals
-
-    Parameters
-    ----------
-    num : Decimal(number)
-        number applied with Decimal function (see import decimal from Decimal)
-
-    Returns
-    -------
-    number: Decimal
-        Fixed number in Decimal form
-
-    '''
-    return num.to_integral() if num == num.to_integral() else num.normalize()
-
-def clean_width(w):
-    '''
-    Clean width values
-    
-    Parameters
-    ----------
-    d: string
-        width values in string format
-        
-    Returns:
-    --------
-    d: string
-        cleaned diameter values
-    
-    DOCTESTS:
-    >>> clean_width('175')
-    '175'
-    >>> clean_width('6.50')
-    '6.5'
-    >>> clean_width('27X')
-    '27'
-    >>> clean_width('LT35X')
-    'LT35'
-    >>> clean_width('8.25')
-    '8.25'
-    >>> clean_width('P265.5')
-    'P265.5'
-    >>> clean_width(np.NaN)
-    nan
-    
-    '''
-    if pd.notna(w):
-        w = str(w).strip().upper()
-        # detects if input has expected format
-        prefix_num = re.search('[A-Z]*[0-9]+.?[0-9]*', w)
-        if prefix_num is not None:
-            num_str = ''.join(re.findall('[0-9]|\.', prefix_num[0]))
-            num = str(remove_trailing_zero(Decimal(num_str)))
-            prefix = w.split(num_str)[0]
-            return prefix + num
-        else:
-            return np.NaN
-    else:
-        return np.NaN
-    
-def clean_diameter(d):
-    '''
-    Fix diameter values
-    
-    Parameters
-    ----------
-    d: string
-        diameter values in string format
-        
-    Returns:
-    --------
-    d: string
-        fixed diameter values
-    
-    DOCTESTS:
-    >>> clean_diameter('R17LT')
-    'R17LT'
-    >>> clean_diameter('R22.50')
-    'R22.5'
-    >>> clean_diameter('15')
-    'R15'
-    >>> clean_diameter(np.NaN)
-    nan
-    
-    '''
-    if pd.notna(d):
-        d = str(d).strip().upper()
-        num_suffix = re.search('[0-9]+.?[0-9]*[A-Z]*', d)
-        if num_suffix is not None:
-            num_str = ''.join(re.findall('([0-9]|\.)', num_suffix[0]))
-            num = str(remove_trailing_zero(Decimal(num_str)))
-            suffix = num_suffix[0].split(num_str)[-1]
-            return f'R{num}{suffix}'
-    else:
-        return np.NaN
-
-def clean_aspect_ratio(ar, model = None):
-    
-    '''
-    Clean raw aspect ratio input
-    
-    Parameters
-    ----------
-    ar: float or string
-        input raw aspect ratio data
-    model: string; optional
-        input model string value of product
-        
-    Returns
-    -------
-    ar: string
-        fixed aspect ratio data in string format for combine_specs
-    
-    DOCTESTS:
-    >>> clean_aspect_ratio('/')
-    'R'
-    >>> clean_aspect_ratio('.5')
-    '9.5'
-    >>> clean_aspect_ratio('14.50')
-    '14.5'
-    >>> clean_aspect_ratio(np.NaN)
-    'R'
-    
-    '''
-    error_ar = {'.5' : '9.5',
-                '0.': '10.5',
-                '2.': '12.5',
-                '3.': '13.5',
-                '5.': '15.5',
-                '70.5': '10.5'}
-    
-    if pd.notna(ar):
-        # aspect ratio is faulty
-        if str(ar) in ['0', 'R1', '/', 'R']:
-            return 'R'
-        # incorrect parsing of decimal aspect ratios
-        elif str(ar) in error_ar.keys():
-            return error_ar[str(ar)]
-        # numeric/integer aspect ratio
-        elif str(float(ar)).isnumeric():
-            return str(ar)
-        # decimal aspect ratio with trailing 0
-        else:
-            return str(remove_trailing_zero(Decimal(str(ar))))
-    else:
-        return 'R'
-
-def combine_specs(w, ar, d, mode = 'SKU'):
-    '''
-    
-    Parameters
-    - w: string
-        section_width
-    - ar: string
-        aspect_ratio
-    - d: string
-        diameter
-    - mode: string; optional
-        SKU or MATCH
-    
-    Returns
-    - combined specs with format for SKU or matching
-    
-    >>> combine_specs('175', 'R', 'R15', mode = 'SKU')
-    '175/R15'
-    >>> combine_specs('175', '65', 'R15', mode = 'SKU')
-    '175/65/R15'
-    >>> combine_specs('33', '12.5', 'R15', mode = 'SKU')
-    '33X12.5/R15'
-    >>> combine_specs('LT175', '65', 'R15C', mode = 'SKU')
-    'LT175/65/R15C'
-    >>> combine_specs('LT175', '65', 'R15C', mode = 'MATCH')
-    '175/65/15'
-    
-    '''
-    if mode == 'SKU':
-        d = d if 'R' in d else 'R' + d 
-        if ar != 'R':
-            if '.' in ar:
-                return w + 'X' + ar + '/' + d
-            else:
-                return '/'.join([w, ar, d])
-        else:
-            return w + '/' + d
+#     # '''
+#     # DOCTESTS:
             
-    elif mode == 'MATCH':
-        w = ''.join(re.findall('[0-9]|\.', w))
-        ar = ''.join(re.findall('[0-9]|\.|R', ar))
-        d = ''.join(re.findall('[0-9]|\.', d))
-        return '/'.join([w, ar, d])
-
-    else:
-        combine_specs(w, ar, d, mode = 'SKU')
-
-def clean_speed_rating(sp):
-    '''
-    Clean speed rating of gulong products
+#     # >>> combine_sku(df.loc[0])
+#     # 'ARIVO 195/R15 TRANSITO ARZ 6-X 106/104Q'
     
-    DOCTESTS:
-    >>> clean_speed_rating('W XL')
-    'W'
-    >>> clean_speed_rating('0')
-    'B'
-    >>> clean_speed_rating('118Q')
-    'Q'
-    >>> clean_speed_rating('T/H')
-    'T'
-    >>> clean_speed_rating('-')
-    nan
+#     # '''
+#     specs_cols = ['section_width', 'aspect_ratio', 'rim_size']
+#     specs = config_gulong.combine_specs(row[specs_cols[0]], 
+#                           row[specs_cols[1]], 
+#                           row[specs_cols[2]],
+#                           mode = 'SKU')
     
-    '''
-    # SAILUN 205/75/R16C COMMERCIO VX1 10PR - 113/111R
-    # SAILUN 205/75/R16C COMMERCIO VX1 8PR - 110/108R
-    # SAILUN 235/65/R16C COMMERCIO VX1 8PR - 115/113R
-    # SAILUN 33X/12.50/R20 TERRAMAX M/T 10PR - 114Q
-    # SAILUN 35X/12.50/R20 TERRAMAX M/T 10PR - 121Q
-    # SAILUN 305/55/R20 TERRAMAX M/T 10PR - 121/118Q
-    # SAILUN 35X/12.50/R18 TERRAMAX M/T 10PR - None
-    # SAILUN 33X/12.50/R18 TERRAMAX M/T 10PR - 118Q
-    # SAILUN 35X/12.50/R17 TERRAMAX M/T 10PR - 121Q
-    # SAILUN 33X/12.50/R17 TERRAMAX M/T 8PR - 114Q
-    # SAILUN 285/70/R17 TERRAMAX M/T 10PR - 121/118Q
-    # SAILUN 265/70/R17 TERRAMAX M/T 10PR - 121/118Q
-    # SAILUN 265/75/R16 TERRAMAX M/T 10PR - 116S
-    # SAILUN 245/75/R16 TERRAMAX M/T 10PR - 111S
-    # SAILUN 35X/12.50/R15 TERRAMAX M/T 6PR - 113Q
-    # SAILUN 33X/12.50/R15 TERRAMAX M/T 6PR - 108Q
-    # SAILUN 31X/10.50/R15 TERRAMAX M/T 6PR - 109S
-    # SAILUN 30X/9.50/R15 TERRAMAX M/T 6PR - 104Q
-    # SAILUN 235/75/R15 TERRAMAX M/T 6PR - 104/101Q
-    # SAILUN 265/70/R17 TERRAMAX A/T 10PR - 121/118S
+#     if pd.notna(row['pattern']):
+#         SKU = ' '.join([row['make'], specs, row['pattern']])
+#     else:
+#         SKU = ' '.join([row['make'], specs])
     
-    # not NaN
-    if pd.notna(sp):
-        # baseline correct
-        sp = sp.strip().upper()
-        # detect if numerals are present 
-        num = re.search('[0-9]{2,3}', sp)
-        
-        if num is None:
-            pass
-        else:
-            # remove if found
-            sp = sp.split(num[0])[-1].strip()
-            
-        if 'XL' in sp:
-            return sp.split('XL')[0].strip()
-        elif '/' in sp:
-            return sp.split('/')[0].strip()
-        elif sp == '0':
-            return 'B'
-        elif sp == '-':
-            return np.NaN
-        else:
-            return sp
-    else:
-        return np.NaN
-
-def clean_load_rating(load):
-    
-    # SAILUN 225/60/R17 TERRAMAX CVR 199H - 99H instead of 199H
-    # SAILUN 225/60/R17 TERRAMAX CVR 199H - 91W instead of 914W
-    
-    return 0
-
-def combine_sku(row):
-    # df = df = pd.DataFrame(columns = ['make', 
-    #                                   'section_width', 
-    #                                   'aspect_ratio', 
-    #                                   'rim_size', 
-    #                                   'pattern', 
-    #                                   'load_rating', 
-    #                                   'speed_rating'])
-    # df = df.append(pd.Series({'make': 'ARIVO', 
-    #                           'section_width': '195', 
-    #                           'aspect_ratio': 'R',
-    #                           'rim_size': 'R15',
-    #                           'pattern': 'TRANSITO ARZ 6-X',
-    #                           'load_rating': '106/104',
-    #                           'speed_rating': 'Q'}), ignore_index = True)
-    
-    # '''
-    # DOCTESTS:
-            
-    # >>> combine_sku(df.loc[0])
-    # 'ARIVO 195/R15 TRANSITO ARZ 6-X 106/104Q'
-    
-    # '''
-    specs_cols = ['section_width', 'aspect_ratio', 'rim_size']
-    specs = combine_specs(row[specs_cols[0]], 
-                          row[specs_cols[1]], 
-                          row[specs_cols[2]],
-                          mode = 'SKU')
-    
-    if pd.notna(row['pattern']):
-        SKU = ' '.join([row['make'], specs, row['pattern']])
-    else:
-        SKU = ' '.join([row['make'], specs])
-    
-    if pd.notna(row['load_rating']) and pd.notna(row['speed_rating']):
-        SKU  = SKU + ' ' +  row['load_rating'] + row['speed_rating']
-    else:
-        pass
-    return SKU
+#     if pd.notna(row['load_rating']) and pd.notna(row['speed_rating']):
+#         SKU  = SKU + ' ' +  row['load_rating'] + row['speed_rating']
+#     else:
+#         pass
+#     return SKU
     
 @st.cache_data
 def acquire_data():
@@ -536,17 +218,24 @@ def acquire_data():
 
     df_data = pd.read_csv(url1, parse_dates = ['supplier_price_date_updated','product_price_date_updated'])
     #df_data.loc[df_data['sale_tag']==0,'promo'] =df_data.loc[df_data['sale_tag']==0,'srp']
-    df_data = df_data[['make','model', 'section_width', 'aspect_ratio', 'rim_size' ,'pattern', 'load_rating','speed_rating','stock','name','cost','srp', 'promo', 'mp_price','b2b_price' , 'supplier_price_date_updated','product_price_date_updated','supplier_id','sale_tag']]
-    df_data.columns = ['make','model', 'section_width', 'aspect_ratio', 'rim_size','pattern', 'load_rating','speed_rating','stock','supplier','supplier_price','GulongPH_slashed','GulongPH','marketplace','b2b','supplier_updated','gulong_updated','supplier_id','sale_tag']
+    df_data = df_data[['make','model', 'section_width', 'aspect_ratio', 'rim_size' ,'pattern', 'load_rating','speed_rating','stock','name','cost','srp', 'promo', 'mp_price','b2b_price' , 'supplier_price_date_updated','product_price_date_updated','supplier_id','sale_tag', 'product_id']]
+    df_data.columns = ['make','model', 'section_width', 'aspect_ratio', 'rim_size','pattern', 'load_rating','speed_rating','stock','supplier','supplier_price','GulongPH_slashed','GulongPH','marketplace','b2b','supplier_updated','gulong_updated','supplier_id','sale_tag', 'product_id']
     
     # cleaning
-    df_data.loc[:, 'make'] = df_data.apply(lambda x: clean_make(x['make'], makes_list, model = x['model']), axis=1)
-    df_data.loc[:, 'section_width'] = df_data.apply(lambda x: clean_width(x['section_width']), axis=1)
-    df_data.loc[:, 'aspect_ratio'] = df_data.apply(lambda x: clean_aspect_ratio(x['aspect_ratio'], model = x['model']), axis=1)
-    df_data.loc[:, 'rim_size'] = df_data.apply(lambda x: clean_diameter(x['rim_size']), axis=1)
-    df_data.loc[:, 'speed_rating'] = df_data.apply(lambda x: clean_speed_rating(x['speed_rating']), axis=1)
+    df_data.loc[:, 'make'] = df_data.apply(lambda x: config_gulong.clean_make(x['make'], makes_list, model = x['model']), axis=1)
+    df_data.loc[:, 'section_width'] = df_data.apply(lambda x: config_gulong.clean_width(x['section_width']), axis=1)
+    df_data.loc[:, 'aspect_ratio'] = df_data.apply(lambda x: config_gulong.clean_aspect_ratio(x['aspect_ratio'], model = x['model']), axis=1)
+    df_data.loc[:, 'rim_size'] = df_data.apply(lambda x: config_gulong.clean_diameter(x['rim_size']), axis=1)
+    df_data.loc[:, 'speed_rating'] = df_data.apply(lambda x: config_gulong.clean_speed_rating(x['speed_rating']), axis=1)
     df_data.loc[:, 'model_'] = df_data.loc[:, 'model']
-    df_data.loc[:, 'model'] = df_data.apply(lambda x: combine_sku(x), axis=1)
+    #df_data.loc[:, 'model'] = df_data.apply(lambda x: combine_sku(x), axis=1)
+    df_data.loc[:, 'model'] = df_data.apply(lambda x: config_gulong.combine_sku(x['make'],
+                                                                                x['section_wdith'],
+                                                                                x['aspect_ratio'],
+                                                                                x['rim_size'],
+                                                                                x['pattern'],
+                                                                                x['speed_rating'],
+                                                                                x['load_rating']), axis=1)
     
     df_supplier = df_data[['model','supplier','supplier_price','supplier_updated']].copy().sort_values(by='supplier_updated',ascending=False)
     df_supplier = df_supplier.drop_duplicates(subset=['model','supplier'],keep='first')
@@ -556,7 +245,10 @@ def acquire_data():
     df_supplier['supplier_max_price'] = df_supplier.fillna(0).max(axis=1)
     df_supplier = df_supplier.reset_index()
     
-    df_gulong = df_data[['make','model', 'section_width', 'aspect_ratio', 'rim_size','pattern', 'load_rating','speed_rating','GulongPH_slashed','GulongPH','b2b','marketplace','gulong_updated','stock','supplier_id','sale_tag']].copy().sort_values(by='gulong_updated',ascending=False)
+    df_gulong = df_data[['make','model', 'section_width', 'aspect_ratio', 'rim_size',
+                         'pattern', 'load_rating','speed_rating','GulongPH_slashed',
+                         'GulongPH','b2b','marketplace','gulong_updated','stock',
+                         'supplier_id','sale_tag', 'product_id']].copy().sort_values(by='gulong_updated',ascending=False)
     df_gulong = df_gulong.drop_duplicates(subset='model',keep='first').drop('gulong_updated',axis = 1)
 
     # import scraped competitor data    
@@ -662,7 +354,7 @@ with t_name:
     t4_name = st.text_input('Tier 4 name:', 'Marketplace Test')
     t5_name = st.text_input('Tier 5 name:', 'Affiliates Test')
 
-df_final, cols_option,df_competitor, last_update = acquire_data()
+df_final, cols_option, df_competitor, last_update = acquire_data()
 
 CS1a,CS2a = st.sidebar.columns([2,3])
 
