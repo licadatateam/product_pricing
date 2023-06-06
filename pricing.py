@@ -6,13 +6,11 @@ Created on Mon Aug  8 16:46:26 2022
 
 import pandas as pd
 import numpy as np
-import math, re
+import math
 import gspread, datetime
 import os, sys
 import config_gulong
 
-from decimal import Decimal
-from fuzzywuzzy import fuzz, process
 
 import streamlit as st
 from st_aggrid import AgGrid,GridUpdateMode, DataReturnMode
