@@ -232,8 +232,8 @@ def acquire_data():
                                                                                 x['aspect_ratio'],
                                                                                 x['rim_size'],
                                                                                 x['pattern'],
-                                                                                x['speed_rating'],
-                                                                                x['load_rating']), axis=1)
+                                                                                x['load_rating'],
+                                                                                x['speed_rating']), axis=1)
     
     df_supplier = df_data[['model','supplier','supplier_price','supplier_updated']].copy().sort_values(by='supplier_updated',ascending=False)
     df_supplier = df_supplier.drop_duplicates(subset=['model','supplier'],keep='first')
