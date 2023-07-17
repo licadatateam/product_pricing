@@ -124,6 +124,7 @@ def fix_names(sku_name, comp=None):
                         'COOPER AT3 LT' : 'AT3 LT',
                         'COOPER AT3 XLT' : 'AT3 XLT',
                         'A/T3' : 'AT3',
+                        'ENERGY XM2' : 'ENERGY XM2',
                         'ENERGY XM+' : 'ENERGY XM2+',
                         'XM2+' : 'ENERGY XM2+',
                         'AT3 XLT': 'AT3 XLT',
