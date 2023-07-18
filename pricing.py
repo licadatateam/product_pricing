@@ -384,7 +384,7 @@ if edit_mode == 'Manual':
             selected_supplier_ = beta_multiselect.multiselect('Included columns in table:',
                                            options = cols_option)
             
-    cols = ['model_','make','dimensions','supplier_max_price','3+1_promo_per_tire_GP25','GulongPH','GulongPH_slashed','b2b','marketplace']
+    cols = ['model_','model','make','dimensions','supplier_max_price','3+1_promo_per_tire_GP25','GulongPH','GulongPH_slashed','b2b','marketplace']
     
     df_show =df_final_[cols].merge(df_final[['model','GulongPH']], how = 'left',left_on = 'model',right_on = 'model', suffixes=('','_backend'))
     check_adjusted = st.sidebar.checkbox('Show adjusted prices only', value = False)
