@@ -403,7 +403,7 @@ if edit_mode == 'Manual':
         reload_data = True
     st.sidebar.caption('Resets the edits done in the table.')
     
-    gridOptions = build_grid(df_show)
+    gridOptions = build_grid(df_show.drop(columns = 'model').rename(columns={'model_':'model'}))
     response = AgGrid(df_show,
         #theme = 'light',
         gridOptions=gridOptions,
