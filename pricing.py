@@ -337,8 +337,8 @@ with CS1a:
     if st.button('Update Data',help='Acquires resutls of query from backend and resets program'):
         update()
 with CS2a:
-    st.caption('GulongPH data last updated on'+str(st.session_state['updated_at']))
-    st.caption('GoGulong/TireManila data last updated on '+str(last_update))
+    st.caption('GulongPH data last updated on '+str(st.session_state['updated_at']))
+    st.caption('GoGulong/TireManila data last updated on '+str(last_update).replace('/','-',-1))
 
 if (st.session_state['updated_at'] !=datetime.datetime.today().date()):
     update()
