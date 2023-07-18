@@ -182,32 +182,6 @@ def adjust_wrt_gogulong(df_comp,GP_15=15,GP_20=5,GP_20_=1, b2b=25,affiliate=27,m
 
 
 makes_list = config_gulong.import_makes()
-
-# def combine_sku(row):
-
-#     # '''
-#     # DOCTESTS:
-            
-#     # >>> combine_sku(df.loc[0])
-#     # 'ARIVO 195/R15 TRANSITO ARZ 6-X 106/104Q'
-    
-#     # '''
-#     specs_cols = ['section_width', 'aspect_ratio', 'rim_size']
-#     specs = config_gulong.combine_specs(row[specs_cols[0]], 
-#                           row[specs_cols[1]], 
-#                           row[specs_cols[2]],
-#                           mode = 'SKU')
-    
-#     if pd.notna(row['pattern']):
-#         SKU = ' '.join([row['make'], specs, row['pattern']])
-#     else:
-#         SKU = ' '.join([row['make'], specs])
-    
-#     if pd.notna(row['load_rating']) and pd.notna(row['speed_rating']):
-#         SKU  = SKU + ' ' +  row['load_rating'] + row['speed_rating']
-#     else:
-#         pass
-#     return SKU
     
 @st.cache_data
 def acquire_data():
@@ -243,7 +217,7 @@ def acquire_data():
     df_supplier['supplier_max_price'] = df_supplier.fillna(0).max(axis=1)
     df_supplier = df_supplier.reset_index()
     
-    df_gulong = df_data[['make','model', 'section_width', 'aspect_ratio', 'rim_size',
+    df_gulong = df_data[['make','model', 'model_','section_width', 'aspect_ratio', 'rim_size',
                          'pattern', 'load_rating','speed_rating','GulongPH_slashed',
                          'GulongPH','b2b','marketplace','gulong_updated','stock',
                          'supplier_id','sale_tag', 'product_id']].copy().sort_values(by='gulong_updated',ascending=False)
@@ -410,7 +384,7 @@ if edit_mode == 'Manual':
             selected_supplier_ = beta_multiselect.multiselect('Included columns in table:',
                                            options = cols_option)
             
-    cols = ['model','make','dimensions','supplier_max_price','3+1_promo_per_tire_GP25','GulongPH','GulongPH_slashed','b2b','marketplace']
+    cols = ['model_','make','dimensions','supplier_max_price','3+1_promo_per_tire_GP25','GulongPH','GulongPH_slashed','b2b','marketplace']
     
     df_show =df_final_[cols].merge(df_final[['model','GulongPH']], how = 'left',left_on = 'model',right_on = 'model', suffixes=('','_backend'))
     check_adjusted = st.sidebar.checkbox('Show adjusted prices only', value = False)
