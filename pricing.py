@@ -153,7 +153,7 @@ def to_excel(df):
     worksheet = writer.sheets['Sheet1']
     format1 = workbook.add_format({'num_format': '0.00'}) 
     worksheet.set_column('A:A', None, format1)  
-    writer.save()
+    writer.close()
     processed_data = output.getvalue()
     return processed_data
 
@@ -686,7 +686,7 @@ if edit_mode == 'Automated':
             df_test2[['model','supplier_max_price','GulongPH','GoGulong','GulongPH_GP','GoGulong_GP']].to_excel(writer, index=False, sheet_name='Case 2')
             df_test3[['model','supplier_max_price','GulongPH','GoGulong','GulongPH_GP','GoGulong_GP']].to_excel(writer, index=False, sheet_name='Case 3')
             workbook = writer.book
-            writer.save()
+            writer.close()
             processed_data = output.getvalue()
             st.download_button(label='📥 Download this data',
                                         data=processed_data ,
