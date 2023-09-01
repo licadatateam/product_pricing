@@ -242,8 +242,8 @@ def acquire_data():
     df_competitor = pd.DataFrame(worksheet.get_all_records())
     #df_competitor = df_competitor[['sku_name','price_gogulong','price_tiremanila','price_partspro']]
     #df_competitor.columns = ['model', 'GoGulong','TireManila','PartsPro']
-    df_competitor = df_competitor[['sku_name','price_tiremanila']]
-    df_competitor.columns = ['model', 'TireManila']
+    df_competitor = df_competitor[['sku_name','price_tiremanila', 'price_partspro']]
+    df_competitor.columns = ['model', 'TireManila', 'PartsPro']
     df_competitor = df_competitor.replace('',np.nan)
     #df_competitor['GoGulong_slashed'] = df_competitor['GoGulong'].apply(lambda x: float(x)/0.8)
     
