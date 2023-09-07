@@ -240,17 +240,17 @@ def acquire_data():
     # df_competitor = pd.DataFrame(rows)
     
     df_competitor = pd.DataFrame(worksheet.get_all_records())
-    #df_competitor = df_competitor[['sku_name','price_gogulong','price_tiremanila','price_partspro']]
-    #df_competitor.columns = ['model', 'GoGulong','TireManila','PartsPro']
-    df_competitor = df_competitor[['sku_name','price_tiremanila', 'price_partspro']]
-    df_competitor.columns = ['model', 'TireManila', 'PartsPro']
+    df_competitor = df_competitor[['sku_name','price_gogulong','price_tiremanila','price_partspro']]
+    df_competitor.columns = ['model', 'GoGulong','TireManila','PartsPro']
+    # df_competitor = df_competitor[['sku_name','price_tiremanila', 'price_partspro']]
+    # df_competitor.columns = ['model', 'TireManila', 'PartsPro']
     df_competitor = df_competitor.replace('',np.nan)
-    #df_competitor['GoGulong_slashed'] = df_competitor['GoGulong'].apply(lambda x: float(x)/0.8)
+    df_competitor['GoGulong_slashed'] = df_competitor['GoGulong'].apply(lambda x: float(x)/0.8)
     
     df_temp = df_gulong.merge(df_supplier, on = 'model', how='outer').merge(df_competitor, on='model', how='left').sort_values(by='model')
     df_temp = df_temp.dropna(subset = 'supplier_max_price')
     df_temp['dimensions'] = df_temp.apply(lambda x: '/'.join(x[['section_width','aspect_ratio','rim_size']].astype(str)),axis=1)
-    #df_temp['GoGulong_GP'] = df_temp.loc[:,['supplier_max_price','GoGulong']].apply(lambda x: round(get_GP(x['supplier_max_price'],x['GoGulong']),2),axis=1)
+    df_temp['GoGulong_GP'] = df_temp.loc[:,['supplier_max_price','GoGulong']].apply(lambda x: round(get_GP(x['supplier_max_price'],x['GoGulong']),2),axis=1)
     df_temp = df_temp.loc[df_temp['GulongPH'] !=0]
     df_temp['GulongPH_GP'] = df_temp.loc[:,['supplier_max_price','GulongPH']].apply(lambda x: round(get_GP(x['supplier_max_price'],x['GulongPH']),2),axis=1)
     cols_option = ['GoGulong','GoGulong_slashed','TireManila','PartsPro','GoGulong_GP','GulongPH_GP'] + list(df_supplier.columns)
