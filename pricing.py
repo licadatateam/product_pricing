@@ -186,7 +186,7 @@ makes_list = config_gulong.import_makes()
 @st.cache_data
 def acquire_data():
     # http://app.redash.licagroup.ph/queries/131
-    url1 =  "http://app.redash.licagroup.ph/api/queries/131/results.csv?api_key=BdUhcTVmwDEqP5aYKpSolS5ApT2lig4hpdDqIPJq"
+    url1 =  "http://app.redash.licagroup.ph/api/queries/131/results.csv?api_key=jyPEFqfkADSqfPGlCtUBc7BDClH45xTpEJ0BCenE"
 
     df_data = pd.read_csv(url1, parse_dates = ['supplier_price_date_updated','product_price_date_updated'])
     #df_data.loc[df_data['sale_tag']==0,'promo'] =df_data.loc[df_data['sale_tag']==0,'srp']
