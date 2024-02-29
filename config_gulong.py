@@ -359,18 +359,21 @@ def clean_aspect_ratio(ar, model = None):
                 '70.5': '10.5'}
     
     if pd.notna(ar):
-        # aspect ratio is faulty
-        if str(ar) in ['0', 'R1', '/', 'R']:
+        try:
+            # aspect ratio is faulty
+            if str(ar) in ['0', 'R1', '/', 'R']:
+                return 'R'
+            # incorrect parsing osf decimal aspect ratios
+            elif str(ar) in error_ar.keys():
+                return error_ar[str(ar)]
+            # numeric/integer aspect ratio
+            elif str(ar).isnumeric():
+                return str(ar)
+            # decimal aspect ratio with trailing 0
+            else:
+                return str(remove_trailing_zero(Decimal(str(ar))))
+        except:
             return 'R'
-        # incorrect parsing osf decimal aspect ratios
-        elif str(ar) in error_ar.keys():
-            return error_ar[str(ar)]
-        # numeric/integer aspect ratio
-        elif str(ar).isnumeric():
-            return str(ar)
-        # decimal aspect ratio with trailing 0
-        else:
-            return str(remove_trailing_zero(Decimal(str(ar))))
     else:
         return 'R'
     
