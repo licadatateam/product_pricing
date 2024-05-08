@@ -244,7 +244,7 @@ def acquire_data():
     df_competitor.columns = ['model', 'GoGulong','TireManila','PartsPro', 'qty_tiremanila', 'year']
     # df_competitor = df_competitor[['sku_name','price_tiremanila', 'price_partspro']]
     # df_competitor.columns = ['model', 'TireManila', 'PartsPro']
-    df_competitor = df_competitor.replace('',np.nan).replace(None, np.nan)
+    df_competitor = df_competitor.replace('',np.nan)
     df_competitor['GoGulong_slashed'] = df_competitor['GoGulong'].apply(lambda x: float(x)/0.8)
     
     df_temp = df_gulong.merge(df_supplier, on = 'model', how='outer').merge(df_competitor, on='model', how='left').sort_values(by='model')
