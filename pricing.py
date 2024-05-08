@@ -240,8 +240,8 @@ def acquire_data():
     # df_competitor = pd.DataFrame(rows)
     
     df_competitor = pd.DataFrame(worksheet.get_all_records())
-    df_competitor = df_competitor[['sku_name','price_gogulong','price_tiremanila','price_partspro']]
-    df_competitor.columns = ['model', 'GoGulong','TireManila','PartsPro']
+    df_competitor = df_competitor[['sku_name','price_gogulong','price_tiremanila','price_partspro', 'qty_tiremanila', 'year']]
+    df_competitor.columns = ['model', 'GoGulong','TireManila','PartsPro', 'qty_tiremanila', 'year']
     # df_competitor = df_competitor[['sku_name','price_tiremanila', 'price_partspro']]
     # df_competitor.columns = ['model', 'TireManila', 'PartsPro']
     df_competitor = df_competitor.replace('',np.nan)
