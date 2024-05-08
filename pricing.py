@@ -1,7 +1,7 @@
 
 """
 Created on Mon Aug  8 16:46:26 2022
-@author: Arvin Jay
+@author: Arvin Jay & Carlo Solibet
 """
 
 import pandas as pd
@@ -253,7 +253,8 @@ def acquire_data():
     df_temp['GoGulong_GP'] = df_temp.loc[:,['supplier_max_price','GoGulong']].apply(lambda x: round(get_GP(x['supplier_max_price'],x['GoGulong']),2),axis=1)
     df_temp = df_temp.loc[df_temp['GulongPH'] !=0]
     df_temp['GulongPH_GP'] = df_temp.loc[:,['supplier_max_price','GulongPH']].apply(lambda x: round(get_GP(x['supplier_max_price'],x['GulongPH']),2),axis=1)
-    cols_option = ['GoGulong','GoGulong_slashed','TireManila','PartsPro','GoGulong_GP','GulongPH_GP'] + list(df_supplier.columns)
+    cols_option = ['GoGulong','GoGulong_slashed','TireManila','PartsPro','GoGulong_GP','GulongPH_GP',
+                   'qty_tiremanila', 'year'] + list(df_supplier.columns)
     df_temp['3+1_promo_per_tire_GP25'] = df_temp['supplier_max_price'].apply(lambda x: promotize(x,25))
     df_temp = df_temp.drop_duplicates(subset='model',keep='first')
     if 'model' in cols_option:
@@ -384,7 +385,9 @@ if edit_mode == 'Manual':
                                            default = list(cols_option))
         else:
             selected_supplier_ = beta_multiselect.multiselect('Included columns in table:',
-                                           options = cols_option)
+                                           options = cols_option,
+                                           default = ['GoGulong','TireManila','PartsPro',
+                                                          'qty_tiremanila', 'year'])
             
     cols = ['model_','model','make','dimensions','supplier_max_price','3+1_promo_per_tire_GP25','GulongPH','GulongPH_slashed','b2b','marketplace']
     
