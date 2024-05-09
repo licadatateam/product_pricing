@@ -388,6 +388,7 @@ def clean_speed_rating(sp):
     else:
         return np.NaN
 
+
 def combine_sku(make, w, ar, d, model, load, speed):
     '''
     DOCTESTS:
@@ -398,11 +399,19 @@ def combine_sku(make, w, ar, d, model, load, speed):
     '''
     specs = combine_specs(w, ar, d, mode = 'SKU')
     
-    if (load in ['nan', np.NaN, None, '-', '']) or (speed in ['nan', np.NaN, None, '', '-']):
-        return ' '.join([make, specs, model])
-    else:
-        return ' '.join([make, specs, model, load + speed])
+    try:
+        SKU = ' '.join([make, specs, model])
+    except:
+        SKU = ' '.join([make, specs])
     
+    finally:
+        if (load in ['nan', np.NaN, None, '-', '']) or \
+            (speed in ['nan', np.NaN, None, '', '-']):
+            pass
+        else:
+            SKU = SKU + ' ' + load + speed
+        return SKU
+
 def clean_tire_size(s : str) -> tuple:
     '''
     Extracts width, aspect ratio, and diameter information from tire size string
