@@ -1,4 +1,3 @@
-
 """
 Created on Mon Aug  8 16:46:26 2022
 @author: Arvin Jay & Carlo Solibet
@@ -9,7 +8,7 @@ import numpy as np
 import math
 import gspread, datetime
 import os, sys
-import config_gulong
+import cleaner_functions
 
 
 import streamlit as st
@@ -95,7 +94,7 @@ def highlight_smallercompetitor(xa):
     col_eval = ['GoGulong','TireManila','PartsPro']
     for column in col_eval:
         if column in xa.columns:
-            c = xa['GulongPH'] > xa[column]
+            c = xa['GulongPH'] > xa[column] # filter condition
             df1['GulongPH']= np.where(c, 'background-color: {}'.format('pink'), df1['GulongPH'])
             df1[column]= np.where(c, 'background-color: {}'.format('pink'), df1[column])
     return df1
@@ -181,7 +180,7 @@ def adjust_wrt_gogulong(df_comp,GP_15=15,GP_20=5,GP_20_=1, b2b=25,affiliate=27,m
   return df_comp_
 
 
-makes_list = config_gulong.import_makes()
+makes_list = cleaner_functions.import_makes()
     
 @st.cache_data
 def acquire_data():
@@ -194,14 +193,14 @@ def acquire_data():
     df_data.columns = ['make','model', 'section_width', 'aspect_ratio', 'rim_size','pattern', 'load_rating','speed_rating','stock','supplier','supplier_price','GulongPH_slashed','GulongPH','marketplace','b2b','supplier_updated','gulong_updated','supplier_id','sale_tag', 'product_id']
     
     # cleaning
-    df_data.loc[:, 'make'] = df_data.apply(lambda x: config_gulong.clean_make(x['make'], makes_list, model = x['model']), axis=1)
-    df_data.loc[:, 'section_width'] = df_data.apply(lambda x: config_gulong.clean_width(x['section_width']), axis=1)
-    df_data.loc[:, 'aspect_ratio'] = df_data.apply(lambda x: config_gulong.clean_aspect_ratio(x['aspect_ratio'], model = x['model']), axis=1)
-    df_data.loc[:, 'rim_size'] = df_data.apply(lambda x: config_gulong.clean_diameter(x['rim_size']), axis=1)
-    df_data.loc[:, 'speed_rating'] = df_data.apply(lambda x: config_gulong.clean_speed_rating(x['speed_rating']), axis=1)
+    df_data.loc[:, 'make'] = df_data.apply(lambda x: cleaner_functions.clean_make(x['make'], makes_list, model = x['model']), axis=1)
+    df_data.loc[:, 'section_width'] = df_data.apply(lambda x: cleaner_functions.clean_width(x['section_width']), axis=1)
+    df_data.loc[:, 'aspect_ratio'] = df_data.apply(lambda x: cleaner_functions.clean_aspect_ratio(x['aspect_ratio'], model = x['model']), axis=1)
+    df_data.loc[:, 'rim_size'] = df_data.apply(lambda x: cleaner_functions.clean_diameter(x['rim_size']), axis=1)
+    df_data.loc[:, 'speed_rating'] = df_data.apply(lambda x: cleaner_functions.clean_speed_rating(x['speed_rating']), axis=1)
     df_data.loc[:, 'model_'] = df_data.loc[:, 'model']
     #df_data.loc[:, 'model'] = df_data.apply(lambda x: combine_sku(x), axis=1)
-    df_data.loc[:, 'model'] = df_data.apply(lambda x: config_gulong.combine_sku(x['make'],
+    df_data.loc[:, 'model'] = df_data.apply(lambda x: cleaner_functions.combine_sku(x['make'],
                                                                                 x['section_width'],
                                                                                 x['aspect_ratio'],
                                                                                 x['rim_size'],
