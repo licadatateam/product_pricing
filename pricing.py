@@ -9,6 +9,7 @@ import math
 import gspread, datetime
 import os, sys
 import cleaner_functions
+import main
 
 
 import streamlit as st
@@ -344,6 +345,43 @@ with CS2a:
 
 if (st.session_state['updated_at'] !=datetime.datetime.today().date()):
     update()
+
+st.sidebar.markdown("""---""")
+
+def upload_files():
+    supp_files = st.file_uploader(label = 'Upload supplier files',
+                     type = ['xlsx', 'csv', 'xls'],
+                     accept_multiple_files = True)
+
+    return supp_files
+
+suppliers = df_final.suppliers.unique()
+
+if 'files' not in st.session_state:
+    st.session_state['files'] = {}
+
+if 'selected_supplier' not in st.session_state:
+    st.session_state['selected_supplier'] = ''
+
+with st.form(key = 'Supplier Files Upload'):
+
+    supplier_select = st.selectbox('Select Supplier Files',
+                     options = suppliers,
+                     index = 0)
+
+    if st.session_state['selected_supplier'] != supplier_select:
+        st.session_state['selected_supplier'] = supplier_select
+    
+    st.session_state['files'][supplier_select] = upload_files()
+
+    #st.write(st.session_state)
+
+    confirm_btn = st.form_submit_button('CONFIRM')
+
+if confirm_btn:
+    #if sum([len(v) for k, v in st.session_state['files'].items()]):
+    df_supp = main.get_supplier_data_from_dict(st.session_state['files'])
+
 
 st.sidebar.markdown("""---""")
 CS1,CS2 = st.sidebar.columns([2,3])
