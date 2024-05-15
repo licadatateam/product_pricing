@@ -28,9 +28,10 @@ def fix_names(sku_name, comp=None):
     '''
     
     # replacement should be all caps
-    change_name_dict = {'TRANSIT.*ARZ.?6-X' : 'TRANSITO ARZ6-X', #ARIVO
-                        'TRANSIT.*ARZ.?6-A' : 'TRANSITO ARZ6-A', #ARIVO
-                        'TRANSIT.*ARZ.?6-M' : 'TRANSITO ARZ6-M', #ARIVO
+    change_name_dict = {'TRANSIT.*ARZ(.|\s)?6-X' : 'TRANSITO ARZ 6-X', #ARIVO
+                        'TRANSIT.*ARZ(.|\s)?6-A' : 'TRANSITO ARZ 6-A', #ARIVO
+                        'TRANSIT.*ARZ(.|\s)?6-M' : 'TRANSITO ARZ 6-M', #ARIVO
+                        'TRANSIT.*ARZ(.|\s)?6-C' : 'TRANSITO ARZ 6-C', #ARIVO
                         'OPA25': 'OPEN COUNTRY A25', # TOYO
                         'OPA28': 'OPEN COUNTRY A28', # TOYO
                         'OPA32': 'OPEN COUNTRY A32', # TOYO
@@ -44,7 +45,7 @@ def fix_names(sku_name, comp=None):
                         'OPRT': 'OPEN COUNTRY RT', # TOYO
                         'OPUT': 'OPEN COUNTRY UT', # TOYO
                         'DC -80': 'DC-80', #DOUBLECOIN
-                        'DC -80+': 'DC-80+', #DOUBLECOIN
+                        re.escape('DC -80+') : 'DC-80+', #DOUBLECOIN
                         'KM3': 'MUD-TERRAIN T/A KM3', # BFGOODRICH
                         'KO2': 'ALL-TERRAIN T/A KO2', # BFGOODRICH
                         'TRAIL-TERRAIN T/A' : 'TRAIL-TERRAIN', # BFGOODRICH
@@ -81,12 +82,12 @@ def fix_names(sku_name, comp=None):
                         'A/T3' : 'AT3',
                         'ENERGY XM2+' : 'ENERGY XM2+',
                         'ENERGY XM2' : 'ENERGY XM2',
-                        'ENERGY XM+' : 'ENERGY XM2+',
-                        'XM2+' : 'ENERGY XM2+',
+                        re.escape('ENERGY XM+') : 'ENERGY XM2+',
+                        re.escape('XM2+') : 'ENERGY XM2+',
                         'AT3 XLT': 'AT3 XLT',
                         'ADVANTAGE T/A DRIVE' : 'ADVANTAGE T/A DRIVE',
                         'ADVANTAGE T/A SUV' : 'ADVANTAGE T/A SUV',
-                        'AGILIS 3' :' AGILIS 3',
+                        'AGILIS 3' : 'AGILIS 3',
                         'PRIMACY 4 ST' : 'PRIMACY 4 ST'
                         }
     
@@ -98,7 +99,7 @@ def fix_names(sku_name, comp=None):
         raw_name = re.sub('  ', ' ', sku_name).upper().strip()
         # specific cases
         for key in change_name_dict.keys():
-            if re.search(re.escape(key), raw_name):
+            if re.search(key, raw_name):
                 return change_name_dict[key]
             else:
                 continue
@@ -412,27 +413,6 @@ def combine_sku(make, w, ar, d, model, load, speed):
             SKU = SKU + ' ' + load + speed
         return SKU
 
-def clean_tire_size(s : str) -> tuple:
-    '''
-    Extracts width, aspect ratio, and diameter information from tire size string
-    '''
-    s = re.search('[0-9]+(X|/)[0-9]+(.)?([0-9]+)?(\s+)?[A-Z]+(\s+)?(\/)?[0-9]+([A-Z]+)?', s)
-    
-    try:
-        w = clean_width(re.search("(\d{2,3})|(\d{2,3}[Xx])|(\d{2,3} )", s[0])[0])
-    except:
-        w = None
-    try:
-        ar = clean_aspect_ratio(re.search("(?<=/).*(?=R)|(?<=[Xx]).*(?=R)|( R)", s[0])[0].strip())
-    except:
-        ar = 'R'
-    try:
-        d = clean_diameter(re.search('R.*', s[0])[0].replace(' ', ''))
-    except:
-        d = None
-    
-    return w, ar, d
-
 def clean_specs(x):
     '''
     Extracts cleaned tire specs information from product title
@@ -442,14 +422,57 @@ def clean_specs(x):
     else:
         # baseline correction
         x = x.upper().strip()
-        if ((match := re.search('[0-9]+(X|/)[0-9]+(.)?([0-9]+)?(\s+)?(\/)?[A-Z]+(\s+)?[0-9]+([A-Z]+)?', x)) is not None):
-            specs =  [num[0] for n in re.split('X|Z?R|/', match[0]) if (num := re.search('[0-9]+(.)?[0-9]+', n.strip())) is not None]
-            if '.' in specs[1]:
-                specs[1] = format(float(specs[1]), '.2f')
-            return specs
+        if ((match := re.search('[0-9]+(\.)?[0-9]*(X|\/|\s)?([0-9]+(\.)?[0-9]*)?(\s)*(\/|\s|\-)?[A-Z]*(\s)*[0-9]+([A-Z]+)?', x)) is not None):
+            specs =  [num[0] for n in re.split('X|Z?R|/|-', match[0]) if (num := re.search('[0-9]+(.)?[0-9]+', n.strip())) is not None]
+            if len(specs) == 3:
+                if '.' in specs[1]:
+                    specs[1] = format(float(specs[1]), '.2f')
+            elif len(specs) == 2:
+                specs.insert(1, 'R')
 
         else:
-            return ['']*3
+            specs = ['']*3
+        
+        return specs
+
+def clean_tire_size(s : str) -> tuple:
+    '''
+    Extracts width, aspect ratio, and diameter information from tire size string
+    
+    DOCTESTS:
+    >> clean_tire_size('195/55/R15')
+    (195, 55, 15)
+    
+    > clean_tire_size('195/55 R15')
+    '''
+    #s = re.search('[0-9]+(X|/)[0-9]+(.)?([0-9]+)?(\s+)?[A-Z]+(\s+)?(\/)?[0-9]+([A-Z]+)?', s)
+    sizes_list = clean_specs(s)
+    
+    try:
+        if sizes_list[0] is not None:
+            w = clean_width(sizes_list[0])
+        else:
+            w = clean_width(re.search("(\d{2,3})|(\d{2,3}[Xx])|(\d{2,3} )", s[0])[0])
+    except:
+        w = None
+    try:
+        if sizes_list[1] is not None:
+            ar = clean_aspect_ratio(sizes_list[1])
+        else:
+            ar = clean_aspect_ratio(re.search("(?<=/).*(?=R)|(?<=[Xx]).*(?=R)|( R)", s[0])[0].strip())
+    except:
+        ar = 'R'
+    try:
+        if sizes_list[2] is not None:
+            d = clean_diameter(sizes_list[2])
+        else:
+            d = clean_diameter(re.search('R.*', s[0])[0].replace(' ', ''))
+    except:
+        d = None
+    
+    return w, ar, d
+
+
 
 def clean_price(x : str) -> str:
     '''
@@ -530,7 +553,8 @@ def clean_make(x, makes, model = None):
         return np.NaN
 
 def clean_model(x : str, 
-                ref : None):
+                ref : None,
+                make : str = None):
     '''
     Extracts cleaned tire model from product title
     '''
@@ -542,23 +566,36 @@ def clean_model(x : str,
         
         # make
         try:
-            make = clean_makes(x, ref)
+            if make is not None:
+                pass
+            else:
+                make = clean_makes(x, ref)
         except:
             make = ''
         # tire specs
         try:
-            tire_specs = re.search('[0-9]+(X|/)[0-9]+(.)?([0-9]+)?(\s+)?[A-Z]+(\s+)?[0-9]+([A-Z]+)?', x)[0]
+            #tire_specs = clean_specs(x)
+            tire_specs = re.search('[0-9]+(\.)?[0-9]*(X|\/|\s)?([0-9]+(\.)?[0-9]*)?(\s)*(\/|\-|\s)?R?(\s)?[0-9]+([A-Z]+)?', x)[0]
+            #tire_specs = re.search('[0-9]+(X|/)[0-9]+(.)?([0-9]+)?(\s+)?[A-Z]+(\s+)?[0-9]+([A-Z]+)?', x)[0]
         except:
             tire_specs = ''
+        
+        #ply rating
+        try:
+            ply = re.search('[0-9]{1,2}PR', x)[0]
+        except:
+            ply = ''
+        
         # load speed index
         try:
-            load_speed_index = re.search('[0-9]{2,3}[A-Z]', x)[0]
+            load_speed_index = re.search('[0-9]{2,3}(\/[0-9]{2,3})?[A-Z]', x)[0]
         except:
             load_speed_index = ''
         
-        for element in [make, tire_specs, load_speed_index]:
+        for element in [make, tire_specs, ply, load_speed_index]:
             x = re.sub(element, '', x).strip()
-            x = re.sub("TIRES", "", x).strip()
+        
+        x = re.sub("TIRES", "", x).strip()
             
         return x
     
