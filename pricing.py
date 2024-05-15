@@ -355,7 +355,7 @@ def upload_files():
 
     return supp_files
 
-suppliers = df_final.supplier.unique()
+suppliers = df_final['supplier'].unique()
 
 if 'files' not in st.session_state:
     st.session_state['files'] = {}
