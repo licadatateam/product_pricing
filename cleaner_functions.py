@@ -299,7 +299,8 @@ def clean_aspect_ratio(ar, model = None):
         
         # decimal aspect ratio with trailing 0
         elif '.' in str(ar):
-            return str(remove_trailing_zero(Decimal(str(ar))))
+            #return str(remove_trailing_zero(Decimal(str(ar))))
+            return str(ar).rstrip('0')
         
         else:
             return np.NaN
