@@ -282,7 +282,7 @@ def clean_aspect_ratio(ar, model = None):
                 '70.5': '10.5'}
 
     if pd.notna(ar):
-        ar = re.sub('/', '', str(ar)).strip()
+        #ar = re.sub('/', '', str(ar)).strip()
         
         # aspect ratio is faulty
         if str(ar) in ['0', 'R1', '/', 'R']:
